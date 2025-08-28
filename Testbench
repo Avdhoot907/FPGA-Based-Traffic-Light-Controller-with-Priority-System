@@ -1,0 +1,18 @@
+// tb_traffic.v -- high-level
+module tb;
+reg clk=0; reg rst_n=0;
+// regs for emg, ped ...
+always #10 clk = ~clk; // 50 MHz -> period 20ns
+initial begin
+rst_n = 0; #100; rst_n = 1;
+// normal operation for 100 sec
+#100_000_000;
+// assert EMG for East
+emg_e = 1; #10_000_000; emg_e = 0;
+// assert multiple EMG
+emg_s = 1; emg_w = 1; #5_000_000; emg_s=0; #3_000_000; emg_w=0;
+#100_000_000; $stop;
+end
+// instantiate traffic_controller
+// add monitors that assert if two greens true simultaneously
+endmodule
