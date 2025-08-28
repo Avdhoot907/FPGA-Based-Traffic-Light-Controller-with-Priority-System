@@ -1,1 +1,58 @@
+// traffic_controller.v -- simplified, parameterized
+N_green<=1; N_yellow<=0; E_green<=0; E_yellow<=0; S_green<=0; S_yellow<=0; W_green<=0; W_yellow<=0;
+end else begin
+if(counter>0) counter <= counter - 1;
+case(state)
+S_NG: begin
+if(|emg_req) begin // start emergency service after finish minimal period
+if(counter==0) begin state <= S_NY; counter <= CNT_YELLOW; end
+end else if(counter==0) begin state <= S_NY; counter <= CNT_YELLOW; end
+end
+S_NY: begin
+if(counter==0) begin state <= S_AR; counter <= CNT_ALL_RED; end
+end
+S_AR: begin
+if(counter==0) begin
+// if emergency pending, go to EMG
+if(|emg_req) begin state <= S_EMG; counter <= CNT_EMG; emg_active <= 1'b1; end
+else begin state <= S_EG; counter <= CNT_GREEN; end
+end
+end
+S_EMG: begin
+// map emg_ptr to driving outputs (handled below)
+if(counter==0) begin state <= S_AR; counter <= CNT_ALL_RED; end
+end
+// ... implement E,G->Y->AR->S... (omitted for brevity)
+default: begin state <= S_NG; counter <= CNT_GREEN; end
+endcase
+end
+end
 
+
+// Outputs combinational: set outputs based on state and emg_ptr
+always @(*) begin
+// default all off
+N_green=N_yellow=E_green=E_yellow=S_green=S_yellow=W_green=W_yellow=all_red=0;
+case(state)
+S_NG: N_green=1;
+S_NY: N_yellow=1;
+S_EG: E_green=1;
+S_EY: E_yellow=1;
+S_SG: S_green=1;
+S_SY: S_yellow=1;
+S_WG: W_green=1;
+S_WY: W_yellow=1;
+S_AR: all_red=1;
+S_EMG: begin
+case(emg_ptr)
+0: N_green=1;
+1: E_green=1;
+2: S_green=1;
+3: W_green=1;
+endcase
+end
+endcase
+end
+
+
+endmodule
